@@ -19,6 +19,7 @@ Update the uexplorer bibliography entry with "Just Accepted" status, if the pape
 3. If DOI or PMID is missing, try to find it and update if successfully found. Otherwise, if they both present, just go to the next step.
 4. If the article is now formally published (i.e., has volume, issue, and page numbers), update the entry:
    - Change the `year` field from "Just Accepted" to the actual publication year.
+   - **Important**: Use the actual publication year (when the article appears in a volume/issue), NOT the online first/early access date. For example, if an article was first published online in September 2025 but assigned to Volume 53 in 2026, use 2026 as the year.
    - Add `volume`, `number`, and `pages` fields with the correct values.
    - Ensure all other fields are accurate and complete.
 5. If the article is still "Just Accepted", ensure the entry reflects that status correctly.
