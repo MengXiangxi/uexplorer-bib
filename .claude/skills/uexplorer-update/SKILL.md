@@ -14,7 +14,7 @@ Update the uexplorer bibliography entry with "Just Accepted" status, if the pape
 
 ## Process
 
-1. Locate the entry in `bibliography/uexplorer.bib` using the provided citekey or other information.
+1. Locate the entry in `uExplorer.bib` using the provided citekey or other information.
 2. Check the current status of the article using its DOI or PMID.
 3. If DOI or PMID is missing, try to find it and update if successfully found. Otherwise, if they both present, just go to the next step.
 4. If the article is now formally published (i.e., has volume, issue, and page numbers), update the entry:
@@ -23,7 +23,7 @@ Update the uexplorer bibliography entry with "Just Accepted" status, if the pape
    - Add `volume`, `number`, and `pages` fields with the correct values.
    - Ensure all other fields are accurate and complete.
 5. If the article is still "Just Accepted", ensure the entry reflects that status correctly.
-6. Edit the corresponding entry in `bibliography/uexplorer.bib` to match the updated BibTeX format.
+6. Edit the corresponding entry in `uExplorer.bib` to match the updated BibTeX format.
 7. Return a summary of the changes made.
 
 ## BibTeX Format
