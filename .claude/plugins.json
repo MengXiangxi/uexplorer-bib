@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": 1773989006663,
+  "lastUpdated": 1794331862734,
   "plugins": [
     {
       "filename": "uexplorer-bib",
@@ -9,11 +9,11 @@
         "sourcePath": "skills\\uexplorer-bib",
         "filename": "uexplorer-bib",
         "name": "uexplorer-bib",
-        "description": "This skill generates properly formatted BibTeX citation entries for academic articles. It should be used when the user provides links to academic papers and needs BibTeX entries with specific formatting rules including citekeys, sentence-case titles, full author names, institution mapping, and keyword selection from predefined lists.",
+        "description": "Add, update (\"Just Accepted\" to formally published), or audit BibTeX citation entries in uExplorer.bib for academic papers involving the UIH uEXPLORER total-body PET/CT scanner. Use whenever the user provides paper links/DOIs/PMIDs to add, asks to check or update \"Just Accepted\" entries, or wants to lint/clean uExplorer.bib and its controlled institution/keyword lists.",
         "category": "skills",
         "type": "skill",
-        "size": 6784,
-        "contentHash": "6f9ef280d3a0ecb17cb941d4e8ff9737f4f2b6d43f88b0d39f66e7dd9bd62182"
+        "size": 65812,
+        "contentHash": "c1143c62a9b6a0cb4405777cf55c114976c99267c7e7750a526899b4ba4d59f5"
       }
     },
     {
