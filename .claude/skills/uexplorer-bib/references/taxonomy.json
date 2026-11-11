@@ -241,7 +241,7 @@
     "dosimetry",
     "dual tracer",
     "dual-energy CT",
-    "dynamic imaging",
+    "dynamic acquisition",
     "editorial",
     "endometrial cancer",
     "esophageal cancer",
@@ -318,6 +318,7 @@
     "urology"
   ],
   "keyword_aliases": {
+    "dynamic imaging": "dynamic acquisition",
     "pediatric": "pediatrics",
     "<sup>18</sup>F-fluciclovine": "18F-fluciclovine",
     "<sup>89</sup>Zr-antibody": "89Zr-antibody",
