@@ -12,9 +12,9 @@ Manually maintained BibTeX database of peer-reviewed journal articles and confer
 absolute paths used by the page resolve as in production.
 
 ```bash
-python preview.py                 # sibling checkout ..\MengXiangxi.github.io, port 8765, opens a tab
-python preview.py --site <path>   # explicit site checkout
-python preview.py --no-open       # serve only
+uv run --no-project python preview.py                 # sibling checkout ..\MengXiangxi.github.io, port 8765, opens a tab
+uv run --no-project python preview.py --site <path>   # explicit site checkout
+uv run --no-project python preview.py --no-open       # serve only
 ```
 
 Edit `uExplorer.bib`, reload, and the change shows up (`Cache-Control: no-store`).

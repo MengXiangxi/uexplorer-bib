@@ -13,9 +13,9 @@ touching either repository, this script serves
 so absolute paths resolve exactly as they do on mengxiangxi.info.
 
 Usage:
-    python preview.py                      # sibling checkout, port 8765, opens a tab
-    python preview.py --site D:/path/to/MengXiangxi.github.io
-    python preview.py --port 9000 --no-open
+    uv run --no-project python preview.py                      # sibling checkout, port 8765, opens a tab
+    uv run --no-project python preview.py --site D:/path/to/MengXiangxi.github.io
+    uv run --no-project python preview.py --port 9000 --no-open
 """
 
 from __future__ import annotations
