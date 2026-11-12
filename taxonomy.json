@@ -15,7 +15,10 @@
     "CellSight Technologies Inc.",
     "Changping Laboratory",
     "East China University of Science and Technology",
+    "First Affiliated Hospital of Soochow University",
     "First Hospital of Shanxi Medical University",
+    "Forschungszentrum Jülich",
+    "Fourth Hospital of Hebei Medical University",
     "Fudan University",
     "Fudan University Children's Hospital",
     "Fudan University Shanghai Cancer Center",
@@ -62,6 +65,7 @@
     "SIAT, CAS",
     "San Pietro Fatebenefratelli Hospital",
     "Shanghai Aitrox Technology",
+    "Shanghai Children's Medical Center",
     "Shanghai General Hospital",
     "Shanghai Institute of Materia Medica, CAS",
     "Shanghai Jiaotong Univ",
@@ -79,6 +83,7 @@
     "Tianjin Medical University General Hospital",
     "Tongji Hospital",
     "Tor Vergata University Hospital",
+    "Turku PET Centre",
     "UC Davis",
     "UC Santa Cruz",
     "UCL Hospitals",
@@ -158,6 +163,7 @@
     "Chinese PLA General Hospital": "PLA General Hospital"
   },
   "keywords": [
+    "18F-MK6240",
     "18F-PI-2620",
     "18F-florbetaben",
     "18F-fluciclovine",
@@ -206,6 +212,7 @@
     "[11C]butanol",
     "[11C]raclopride",
     "[13N]Ammonia",
+    "[18F]AlF-NOTA-De-FAPI",
     "[18F]AlF-NOTA-HER2-BCH",
     "[18F]AlF-RESCA-HER2-BCH",
     "[18F]AlF-RESCA-T4",
@@ -218,9 +225,11 @@
     "[18F]PSMA-11",
     "[18F]mFBG",
     "[64Cu]Cu-DOTA-PSMA-3Q",
+    "[68Ga]Ga-AP-PDL1p",
     "[68Ga]Ga-DOTA-7041",
     "[68Ga]Ga-DOTA-GPFAPI-04",
     "[68Ga]Ga-DOTA-PEG2-Asp2-PDL1P",
+    "[68Ga]Ga-FAP-Man",
     "[68Ga]Ga-FAPI",
     "[68Ga]Ga-FAPI-04",
     "[68Ga]Ga-HNI01",
@@ -235,6 +244,7 @@
     "artifact",
     "atherosclerosis",
     "attenuation",
+    "body surface area",
     "bone",
     "breast cancer",
     "breath hold",
@@ -358,6 +368,314 @@
     "The British Journal of Radiology": "British Journal of Radiology",
     "Physics in Medicine {\\&} Biology": "Physics in Medicine \\& Biology",
     "Physics in Medicine & Biology": "Physics in Medicine \\& Biology",
-    "Physics in Medicine and Biology": "Physics in Medicine \\& Biology"
+    "Physics in Medicine and Biology": "Physics in Medicine \\& Biology",
+    "iRADIOLOGY": "iRadiology"
+  },
+  "author_aliases": {
+    "Alberts, Ian": "Alberts, Ian L",
+    "Cook, Gary": "Cook, Gary JR",
+    "吴湖": "Wu, Hubing",
+    "吴湖炳": "Wu, Hubing",
+    "原可卿": "Yuan, Keqing",
+    "周超": "Zhou, Chao",
+    "崔晓": "Cui, Xiao",
+    "岳慧鑫": "Yue, Huixin",
+    "张伟光": "Zhang, Weiguang",
+    "樊卫": "Fan, Wei",
+    "段艳华": "Duan, Yanhua",
+    "杨润君": "Yang, Runjun",
+    "林禹": "Lin, Yu",
+    "李坤": "Li, Kun",
+    "李囡": "Li, Nan",
+    "李慧": "Li, Hui",
+    "王巧愚": "Wang, Qiaoyu",
+    "王静怡": "Wang, Jingyi",
+    "石洪成": "Shi, Hongcheng",
+    "程召平": "Cheng, Zhaoping",
+    "胡莹莹": "Hu, Yingying",
+    "胡鹏程": "Hu, Pengcheng",
+    "蒋梨": "Jiang, Li",
+    "贾进": "Jia, Jin",
+    "陈雪琪": "Chen, Xueqi",
+    "韩彦江": "Han, Yanjiang",
+    "高华萍": "Gao, Huaping",
+    "黄衍超": "Huang, Yanchao",
+    "余浩军": "Yu, Haojun",
+    "刘家金": "Liu, Jiajin",
+    "吴世娜": "Wu, Shina",
+    "张晓军": "Zhang, Xiaojun",
+    "张萌萌": "Zhang, Mengmeng",
+    "徐晓丹": "Xu, Xiaodan",
+    "王瑞民": "Wang, Ruimin",
+    "何秋君": "He, Qiujun",
+    "凌文嘉": "Ling, Wenjia",
+    "刘猛": "Liu, Meng",
+    "姚树林": "Yao, Shulin",
+    "张晶": "Zhang, Jing",
+    "曹振": "Cao, Zhen",
+    "李洪生": "Li, Hongsheng",
+    "李诗": "Li, Shi",
+    "林晓琴": "Lin, Xiaoqin",
+    "梁陈": "Liang, Chen",
+    "欧阳若云": "Ouyang, Ruoyun",
+    "樊帅": "Fan, Shuai",
+    "王全师": "Wang, Quanshi",
+    "陈曼珊": "Chen, Manshan",
+    "高琳": "Gao, Lin",
+    "龙浩": "Long, Hao",
+    "龚琬玲": "Gong, Wanling"
+  },
+  "homonym_authors": {
+    "Cao, Min": {
+      "Cao, Min (Nanfang)": {
+        "note": "Department of Nuclear Medicine, Nanfang Hospital, Southern Medical University",
+        "occurrences": [
+          "dong2024superiorityappendiceal#4",
+          "fu2023radiosynthesis#7"
+        ]
+      },
+      "Cao, Min (Renji)": {
+        "note": "Department of Thoracic Surgery, Renji Hospital, Shanghai Jiao Tong University School of Medicine",
+        "occurrences": [
+          "zhang2026trop2Lung#12",
+          "wu2026RCCB6ccRCC#7",
+          "Ma2026CD70Targeted#2",
+          "huang2024immunopet#3",
+          "wang2022casemenigioma#3"
+        ]
+      }
+    },
+    "Chen, Li": {
+      "Chen, Li (Nanfang)": {
+        "note": "Department of Nuclear Medicine, Nanfang Hospital, Southern Medical University",
+        "occurrences": [
+          "zheng2026FAPI42nasopharyngeal#4",
+          "zhang2025staginglungcancer#6",
+          "yang2024fapilungcancer#8",
+          "chen2025predictingspread#9",
+          "wang202518f_fapi_kinetics#6",
+          "hu2023proper#7",
+          "huang2023optimal#5"
+        ]
+      },
+      "Chen, Li (Shandong)": {
+        "note": "Department of Ultrasound, Shandong Provincial Hospital Affiliated to Shandong First Medical University",
+        "occurrences": [
+          "duan2023feasibility#12",
+          "cheng2023role#2",
+          "duan2021pet#9"
+        ]
+      }
+    },
+    "Chen, Xi": {
+      "Chen, Xi (Nanfang)": {
+        "note": "Nanfang PET Center, Nanfang Hospital, Southern Medical University",
+        "occurrences": [
+          "xie2025deeplearningpdl1esophageal#12"
+        ]
+      },
+      "Chen, Xi (UIH)": {
+        "note": "United Imaging Healthcare, Shanghai",
+        "occurrences": [
+          "lv2021dlrecon#2"
+        ]
+      }
+    },
+    "Chen, Xin": {
+      "Chen, Xin (Fudan)": {
+        "note": "Institute of Radiation Medicine, Fudan University, Shanghai",
+        "occurrences": [
+          "hu2021internal#8"
+        ]
+      },
+      "Chen, Xin (Nottingham)": {
+        "note": "School of Computer Science, University of Nottingham, UK",
+        "occurrences": [
+          "wang2026CTfreeAdaptation#6"
+        ]
+      }
+    },
+    "Guo, Rui": {
+      "Guo, Rui (BCH)": {
+        "note": "Department of Nuclear Medicine, Peking University Cancer Hospital (Beijing Cancer Hospital)",
+        "occurrences": [
+          "ma2026cd147peptideTumorImaging#2",
+          "shen202468grazytracer#8",
+          "qi202468ga_NC#2"
+        ]
+      },
+      "Guo, Rui (Ruijin)": {
+        "note": "Department of Nuclear Medicine / Institute for Medical Imaging Technology, Ruijin Hospital, SJTU",
+        "occurrences": [
+          "chen2026dosimetry#6",
+          "wang2026CTfreeAdaptation#7",
+          "xue2026CTfreeSegmentation#8",
+          "wang2025dataultrafast#7",
+          "wang2025robust#6",
+          "zhang2024sino#2"
+        ]
+      }
+    },
+    "Liu, Fei": {
+      "Liu, Fei (FUSCC)": {
+        "note": "Department of Nuclear Medicine, Fudan University Shanghai Cancer Center",
+        "occurrences": [
+          "Chen2025imagequalitydeeplearning#5"
+        ]
+      },
+      "Liu, Fei (Tongji)": {
+        "note": "Department of Oncology, Tongji Hospital, Tongji Medical College, HUST, Wuhan",
+        "occurrences": [
+          "tang2026protonCSI#8",
+          "tang2026protonWashout#3"
+        ]
+      }
+    },
+    "Liu, Hui": {
+      "Liu, Hui (SYSUCC)": {
+        "note": "Department of Radiation Oncology, Sun Yat-Sen University Cancer Center (senior/corresponding author)",
+        "occurrences": [
+          "Zheng2025AbbreviatedDynamic#11",
+          "wang2024repeatedGASTO#11",
+          "wang2023patlakKi#19",
+          "wang2022assessingdynamic#16"
+        ]
+      },
+      "Liu, Hui (UIH)": {
+        "note": "United Imaging Healthcare, Shanghai",
+        "occurrences": [
+          "Zheng2025AbbreviatedDynamic#4",
+          "wang2024repeatedGASTO#5",
+          "wang2023patlakKi#7",
+          "wang2022assessingdynamic#3"
+        ]
+      },
+      "Liu, Hui (Yale)": {
+        "note": "Department of Radiology and Biomedical Imaging, Yale University, USA",
+        "occurrences": [
+          "xie2026doseAwareDiffusionDenoising#17"
+        ]
+      }
+    },
+    "Liu, Yang": {
+      "Liu, Yang (CAMS)": {
+        "note": "Department of Head and Neck Surgery, National Cancer Center / Cancer Hospital, CAMS & PUMC",
+        "occurrences": [
+          "kong2026covalentFAPIsurgery#2",
+          "kong2024ctr#6"
+        ]
+      },
+      "Liu, Yang (Nanfang)": {
+        "note": "Nanfang Hospital / Peking University Shenzhen Hospital",
+        "occurrences": [
+          "liu2026CAIX#1"
+        ]
+      },
+      "Liu, Yang (PLAGH)": {
+        "note": "Department of Thoracic Surgery, Chinese PLA General Hospital, Beijing",
+        "occurrences": [
+          "tang2026ALKmutationRadiomics#3"
+        ]
+      }
+    },
+    "Liu, Yu": {
+      "Liu, Yu (PKU)": {
+        "note": "College of Chemistry and Molecular Engineering, Peking University",
+        "occurrences": [
+          "cui2024covalent#4"
+        ]
+      },
+      "Liu, Yu (SIAT)": {
+        "note": "Research Center for Medical AI, Shenzhen Institutes of Advanced Technology, CAS",
+        "occurrences": [
+          "han2026dynamicFAPIParametric#2",
+          "han2025psmadeeplearning#3"
+        ]
+      }
+    },
+    "Wang, Tao": {
+      "Wang, Tao (PLAGH)": {
+        "note": "Department of Thoracic Surgery, Chinese PLA General Hospital, Beijing",
+        "occurrences": [
+          "tang2026ALKmutationRadiomics#2"
+        ]
+      },
+      "Wang, Tao (Ruijin)": {
+        "note": "Department of Neurosurgery, Ruijin Hospital, Shanghai Jiao Tong University School of Medicine",
+        "occurrences": [
+          "wang2024effectsD2Receptor#12"
+        ]
+      }
+    },
+    "Zhang, Qing": {
+      "Zhang, Qing (GDPH)": {
+        "note": "PET Center, Department of Nuclear Medicine, Guangdong Provincial People's Hospital",
+        "occurrences": [
+          "sun2026dual#4",
+          "ren2025pentixaforbiodistribution#6",
+          "yuan2025kineticmodeling#5",
+          "zhang202513n13myocaridal#5",
+          "chen2024semiquantitativeFAPI_FDG#2",
+          "sun2024comparisonPCa#3",
+          "zhang2024myocardialmetabolism#5",
+          "yuan2024diagnostic#5",
+          "sun202411cft#3",
+          "yuan2023fpsma#5",
+          "sun2023endometrial#6"
+        ]
+      },
+      "Zhang, Qing (Lu'an)": {
+        "note": "Department of Nuclear Medicine, Lu'an People's Hospital of Anhui Province",
+        "occurrences": [
+          "hu2025pulmonarylesions#6"
+        ]
+      }
+    },
+    "Zhang, Xiaojun": {
+      "Zhang, Xiaojun (Nanfang)": {
+        "note": "PET Center and Department of Nuclear Medicine, Nanfang Hospital, Southern Medical University",
+        "occurrences": [
+          "huang2026APPDL1p#9",
+          "huang2023noninvasive#3"
+        ]
+      },
+      "Zhang, Xiaojun (PLAGH)": {
+        "note": "Department of Nuclear Medicine, First Medical Center, Chinese PLA General Hospital, Beijing",
+        "occurrences": [
+          "wang2026dpi4452#5",
+          "liu2025neuroendocrinetumors#13",
+          "liu2025comparison#2",
+          "wu2026mk6240dosimetry#5"
+        ]
+      }
+    },
+    "Zhang, Yan": {
+      "Zhang, Yan (BCH)": {
+        "note": "Department of Nuclear Medicine, Beijing Cancer Hospital",
+        "occurrences": [
+          "ma2025ganglioneuroma#5"
+        ]
+      },
+      "Zhang, Yan (Renji)": {
+        "note": "Department of Nuclear Medicine, Renji Hospital, Shanghai Jiao Tong University School of Medicine",
+        "occurrences": [
+          "gao2026concurrentNMDAR#3"
+        ]
+      }
+    },
+    "Zhao, Wei": {
+      "Zhao, Wei (BCH)": {
+        "note": "Department of Nuclear Medicine, Beijing Cancer Hospital",
+        "occurrences": [
+          "ma2025conjunctivalmelanoma#5"
+        ]
+      },
+      "Zhao, Wei (Stony Brook)": {
+        "note": "Department of Radiology, Stony Brook University, NY, USA",
+        "occurrences": [
+          "wang2022monoaminergic#10"
+        ]
+      }
+    }
   }
 }
