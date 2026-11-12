@@ -5,14 +5,14 @@ description: Add, update ("Just Accepted" to formally published), or audit BibTe
 
 # uexplorer-bib
 
-Manage `uExplorer.bib` (consumed by `bibtex-js` on `https://mengxiangxi.info/Link/uexplorer.html`) using the deterministic CLI toolkit `.claude/skills/uexplorer-bib/scripts/bib_tool.py` plus semantic curation for titles, scanner institutions, and keywords.
+Manage `uExplorer.bib` (published at `https://mengxiangxi.info/uexplorer-bib/`) using the deterministic CLI toolkit `scripts/bib_tool.py` plus semantic curation for titles, scanner institutions, and keywords.
 
 ## CLI Toolkit (`scripts/bib_tool.py`)
 
 Always run the Python CLI via `uv` first instead of scraping web pages manually:
 
 ```bash
-TOOL=".claude/skills/uexplorer-bib/scripts/bib_tool.py"
+TOOL="scripts/bib_tool.py"
 
 # 1. Fetch metadata (Crossref + PubMed XML) from DOI, PMID, or URL (supports multiple targets)
 uv run --no-project python "$TOOL" fetch "<DOI_OR_PMID_OR_URL>"
@@ -39,7 +39,7 @@ uv run --no-project python "$TOOL" check-updates --apply
 # 4. Validate (and optionally auto-fix) uExplorer.bib formatting, duplicates, and taxonomy rules
 uv run --no-project python "$TOOL" lint --fix
 
-# 5. Synchronize references/taxonomy.json and references/lists.md with uExplorer.bib
+# 5. Synchronize taxonomy.json and lists.md with uExplorer.bib
 uv run --no-project python "$TOOL" sync-taxonomy
 ```
 
@@ -65,8 +65,8 @@ uv run --no-project python "$TOOL" sync-taxonomy
      - Include main authors' institutions (first/corresponding) AND the hospital operating the uEXPLORER scanner.
      - Omit parent university when an affiliated hospital is already listed (e.g., use `Zhongshan Hospital`, not `Zhongshan Hospital; Fudan University`).
      - Affiliations of international collaborating co-authors do NOT fill these slots: when the author list spans many countries, list only first/corresponding + scanner site (e.g., `Zhongshan Hospital` alone, not `Zhongshan Hospital; UC Davis; University of Bern`).
-     - Consult `references/taxonomy.json` (`institution_aliases` and `institutions`). Notably: `"The First Affiliated Hospital of Shandong First Medical University"` $\rightarrow$ `"Qianfoshan Hospital"`.
-   - **Keywords**: typically 1–4 keywords separated by `; ` from `references/taxonomy.json` (`keywords`). The count is **advisory, not a hard limit** — exceed 4 when each additional keyword carries a separate axis (tracer, disease, methodology, physiology, tracer-class) that a reader would filter on; do not pad with near-synonyms or with anything already implied by another keyword.
+     - Consult `taxonomy.json` (`institution_aliases` and `institutions`). Notably: `"The First Affiliated Hospital of Shandong First Medical University"` $\rightarrow$ `"Qianfoshan Hospital"`.
+   - **Keywords**: typically 1–4 keywords separated by `; ` from `taxonomy.json` (`keywords`). The count is **advisory, not a hard limit** — exceed 4 when each additional keyword carries a separate axis (tracer, disease, methodology, physiology, tracer-class) that a reader would filter on; do not pad with near-synonyms or with anything already implied by another keyword.
      - Include tracer (except FDG), disease, and methodology/specialty.
      - **Forbidden**: `PET`, `total body`, `total-body`, `uEXPLORER`, `FDG`, `18F-FDG`.
      - For new tracers, use EANM-recommended names, include tracer family (`FAPI`, `PSMA`, `DOTATATE`), and add `novel tracer` for uncommon tracers.
@@ -74,7 +74,7 @@ uv run --no-project python "$TOOL" sync-taxonomy
        - `kinetics` — the paper reports *fitted* tracer-kinetic quantities (`K1`, `k2`, `k3`, `k4`, `Ki`, `VT`, `BP_ND`, `DVR`, `R1`, `vB`, perfusion from a model), selects/compares kinetic models (1TCM, 2TCM, 2T4k, SRTM, Patlak, Logan, AIC), estimates an input function/IDIF *for kinetic analysis*, or is a review of kinetic methodology. `Ki`/`BP` computed only as a benchmark still counts.
        - `dynamic acquisition` — the multi-frame acquisition itself is the object of study and no kinetic parameter is reported: frame/protocol design, optimal or dual-time-point timing, temporal resolution, frame prediction/interpolation, motion correction, direct dynamic reconstruction, descriptive time–activity/washout behaviour, dynamic feasibility at low dose.
        - Tie-break: if a fitted kinetic quantity is a reported result or the method's output, use `kinetics`; the acquisition-side contribution is then carried by `reconstruction`, `motion`, `fast`, `low dose`, `TAC denoising`, `parametric image`, or `input function`.
-3. Run `bib_tool.py upsert ...` to write the entry to the top of `uExplorer.bib` and auto-sync `references/taxonomy.json` + `references/lists.md`.
+3. Run `bib_tool.py upsert ...` to write the entry to the top of `uExplorer.bib` and auto-sync `taxonomy.json` + `lists.md`.
 4. Output the formatted BibTeX entry plus a **paper content analysis** per “Paper Content Analysis” below (never a one-line "main findings" restatement of the abstract conclusion).
 5. Delete temporary files created while reading the full text (e.g., downloaded HTML/TXT dumps); they do not belong in the repo.
 
@@ -86,8 +86,8 @@ uv run --no-project python "$TOOL" sync-taxonomy
 3. Summarize which entries transitioned from `Just Accepted` to formal publication or gained PMIDs.
 
 ### Workflow C: Audit & Clean `uExplorer.bib`
-1. Run `bib_tool.py lint --fix` to deduplicate entries, strip empty fields (`pmid={}`), normalize institution/keyword/journal aliases, and enforce `bibtex-js` formatting invariants.
-2. Run `bib_tool.py sync-taxonomy` to keep `references/taxonomy.json` and `references/lists.md` in sync with `uExplorer.bib`.
+1. Run `bib_tool.py lint --fix` to deduplicate entries, strip empty fields (`pmid={}`), normalize institution/keyword/journal aliases, and enforce BibTeX formatting invariants.
+2. Run `bib_tool.py sync-taxonomy` to keep `taxonomy.json` and `lists.md` in sync with `uExplorer.bib`.
 
 ## Paper Content Analysis (Workflow A step 4)
 
@@ -134,5 +134,5 @@ keywords={keyword1; keyword2; keyword3}
 
 ## References
 
-- Controlled vocabulary & alias rules: `references/taxonomy.json`
-- Human-readable institution & keyword lists: `references/lists.md`
+- Controlled vocabulary & alias rules: `taxonomy.json`
+- Human-readable institution & keyword lists: `lists.md`

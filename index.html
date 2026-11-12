@@ -2,14 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=/Link/uexplorer.html">
-  <link rel="canonical" href="https://mengxiangxi.info/Link/uexplorer.html">
-  <title>Redirecting to uEXPLORER Publications...</title>
-  <script>
-    window.location.replace("/Link/uexplorer.html" + window.location.search + window.location.hash);
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Publications Related to UIH uEXPLORER PET Scanner</title>
+  <meta name="description" content="Curated BibTeX database of peer-reviewed journal articles and conference proceedings involving the United Imaging Healthcare uEXPLORER total-body PET/CT scanner.">
+  <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-  <p>Redirecting to <a href="/Link/uexplorer.html">Publications Related to UIH uEXPLORER PET Scanner</a>...</p>
+  <div class="page-shell">
+    <header class="site-header" id="top">
+      <h1>Publications Related to UIH uEXPLORER PET Scanner</h1>
+      <p class="subtitle">Curated by <a href="https://mengxiangxi.info/">Xiangxi Meng (孟祥溪)</a></p>
+    </header>
+
+    <nav class="site-nav" aria-label="Main Navigation">
+      <a href="https://mengxiangxi.info/">Home Page</a>
+      <a href="https://github.com/MengXiangxi/uexplorer-bib" target="_blank" rel="noopener">GitHub Repository</a>
+    </nav>
+
+    <main class="content-wrap" id="bib_list_uExplorer">
+      <section class="intro-section">
+        <p>
+          This page collects peer-reviewed journal articles and conference proceedings involving the
+          <strong>United Imaging Healthcare uEXPLORER</strong> total-body PET/CT scanner and its product line.
+        </p>
+        <p>
+          This is an independent academic bibliography maintained in <a href="https://github.com/MengXiangxi/uexplorer-bib" target="_blank" rel="noopener"><code>MengXiangxi/uexplorer-bib</code></a>.
+          Contributions, corrections, and pull requests are welcome (<a href="#contribute">how to contribute</a>).
+        </p>
+      </section>
+
+      <div class="stats-bar">
+        <div class="stats-metrics" id="stats-metrics">Loading bibliography…</div>
+        <div class="year-jump" id="year-jump"></div>
+      </div>
+
+      <details class="metrics-drawer" id="metrics-drawer">
+        <summary class="metrics-summary">
+          <span class="metrics-summary-title">Bibliometrics Overview</span>
+          <span class="metrics-summary-sub" id="metrics-summary-sub">Click to expand · Linked to active filters</span>
+        </summary>
+        <div class="metrics-grid" id="metrics-grid"></div>
+      </details>
+
+      <div class="search-panel" id="bib_search">
+        <div class="search-controls">
+          <select id="filter-year" aria-label="Filter by publication year">
+            <option value="">Search year</option>
+          </select>
+          <select id="filter-author" aria-label="Filter by author">
+            <option value="">Search author</option>
+          </select>
+          <select id="filter-journal" aria-label="Filter by journal">
+            <option value="">Search journal</option>
+          </select>
+          <select id="filter-institution" aria-label="Filter by institution">
+            <option value="">Search institution</option>
+          </select>
+          <select id="filter-keyword" aria-label="Filter by tag">
+            <option value="">Search tag</option>
+          </select>
+          <input type="text" id="searchbar" placeholder="Search title, author, DOI, PMID, tag…" aria-label="Search all fields">
+          <button type="button" class="btn" onclick="resetBibFilters()">Reset</button>
+        </div>
+        <div class="filter-status">
+          <span id="filter-count"></span>
+          <div class="active-chips" id="active-chips"></div>
+        </div>
+      </div>
+
+      <div id="bib_list" class="bibtex_display">
+        <div class="empty-state">Loading publications from <code>uExplorer.bib</code>…</div>
+      </div>
+
+      <section class="info-section" id="about">
+        <h2>About This Project</h2>
+        <p>
+          The publication list above is rendered directly from <a href="./uExplorer.bib"><code>uExplorer.bib</code></a>.
+          New publications are tracked via alerts from <a href="https://scholar.google.com/" target="_blank" rel="noopener">Google Scholar</a>,
+          <a href="https://www.webofscience.com/" target="_blank" rel="noopener">Web of Science</a>,
+          <a href="https://www.scopus.com/" target="_blank" rel="noopener">Scopus</a>, and
+          <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a>.
+        </p>
+        <p>
+          Since 2025, an AI-assisted curation toolkit (<a href="https://mengxiangxi.info/BLOG/coding/2025/05/11/Use-LLM-to-Format-BibTeX.html" target="_blank" rel="noopener">blog post</a>)
+          paired with deterministic schema validation (<code>scripts/bib_tool.py</code>) is used to normalize metadata, scanner institutions, and controlled keywords.
+        </p>
+      </section>
+
+      <section class="info-section" id="contribute">
+        <h2>Contributing</h2>
+        <p>
+          If you notice a missing or newly published article involving the uEXPLORER total-body PET/CT scanner, please
+          <a href="https://github.com/MengXiangxi/uexplorer-bib/issues" target="_blank" rel="noopener">open an issue or pull request on GitHub</a>,
+          or <a href="https://mengxiangxi.info/link.html#comments">contact Xiangxi Meng</a>.
+        </p>
+        <h3>BibTeX Entry Format</h3>
+        <div class="code-block">@article{author2026keyword,
+title={Sentence case title with &lt;sup&gt;18&lt;/sup&gt;F tags},
+author={Last, First M and Last2, First2},
+journal={Full Journal Name},
+volume={X},
+number={Y},
+pages={123--456},
+year={2026},
+doi={10.xxxx/xxxxx},
+pmid={12345678},
+institution={Institution 1; Institution 2},
+keywords={keyword1; keyword2}
+}</div>
+        <ul>
+          <li><strong>Citekey</strong>: <code>&lt;first_author_lastname&gt;&lt;year&gt;&lt;keyword&gt;</code> (e.g., <code>leung2021quantitative</code>).</li>
+          <li><strong>Title</strong>: Sentence case with HTML <code>&lt;sup&gt;</code> and <code>&lt;sub&gt;</code> tags for isotopes and chemical formulas.</li>
+          <li><strong>Author</strong>: Complete author list in <code>Last, First M</code> format joined by <code>and</code> (no <code>et al.</code>).</li>
+          <li><strong>Year</strong>: 4-digit issue publication year, or <code>Just Accepted</code> for online-first articles without volume/pages.</li>
+          <li><strong>Institution &amp; Keywords</strong>: Semicolon-separated (<code>; </code>) values governed by <a href="./taxonomy.json"><code>taxonomy.json</code></a> and <a href="./lists.md"><code>lists.md</code></a>.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      Maintained by <a href="https://mengxiangxi.info/">Xiangxi Meng</a> ·
+      <a href="https://github.com/MengXiangxi/uexplorer-bib">GitHub Repository</a>
+    </footer>
+  </div>
+
+  <script src="./assets/app.js"></script>
 </body>
 </html>

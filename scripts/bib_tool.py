@@ -5,7 +5,7 @@ Subcommands:
   fetch <target>...          Fetch metadata (DOI/PMID/URL) from Crossref + PubMed and draft BibTeX
   check-updates [--apply]    Batch-check 'Just Accepted' and missing-PMID entries in uExplorer.bib
   lint [--fix]               Validate (and optionally fix) uExplorer.bib against schema and taxonomy
-  sync-taxonomy              Synchronize references/taxonomy.json and references/lists.md with uExplorer.bib
+  sync-taxonomy              Synchronize taxonomy.json and lists.md with uExplorer.bib
 """
 
 from __future__ import annotations
@@ -24,11 +24,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-ROOT_DIR = Path(__file__).resolve().parents[4]
-SKILL_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_BIB = ROOT_DIR / "uExplorer.bib"
-TAXONOMY_PATH = SKILL_DIR / "references" / "taxonomy.json"
-LISTS_MD_PATH = SKILL_DIR / "references" / "lists.md"
+TAXONOMY_PATH = ROOT_DIR / "taxonomy.json"
+LISTS_MD_PATH = ROOT_DIR / "lists.md"
 
 USER_AGENT = "uexplorer-bib-tool/2.0 (https://mengxiangxi.info; mailto:mengxiangxi@pku.edu.cn)"
 
@@ -879,7 +878,7 @@ def cmd_sync_taxonomy(args: argparse.Namespace) -> int:
 
     TAXONOMY_PATH.write_text(json.dumps(taxonomy, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    # Regenerate human-readable references/lists.md
+    # Regenerate human-readable lists.md
     repl_lines = [f'- "{k}" → "{v}"' for k, v in sorted(inst_aliases.items())]
     lists_md = (
         "# Lists\n\n"
@@ -993,12 +992,12 @@ def cmd_preview(args: argparse.Namespace) -> int:
     import http.server
     import webbrowser
 
-    site_dir = Path(args.site).resolve()
     bib_dir = ROOT_DIR.resolve()
-    if not (site_dir / "Link" / "uexplorer.html").exists():
-        raise SystemExit(f"Error: {site_dir / 'Link' / 'uexplorer.html'} not found. Pass --site <path-to-mengxiangxi.github.io>")
 
-    class DualRepoHandler(http.server.SimpleHTTPRequestHandler):
+    class StandaloneHandler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *h_args: Any, **h_kwargs: Any) -> None:
+            super().__init__(*h_args, directory=str(bib_dir), **h_kwargs)
+
         extensions_map = {
             **http.server.SimpleHTTPRequestHandler.extensions_map,
             ".html": "text/html; charset=utf-8",
@@ -1013,24 +1012,16 @@ def cmd_preview(args: argparse.Namespace) -> int:
             self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
             super().end_headers()
 
-        def translate_path(self, path: str) -> str:
-            clean = urllib.parse.urlsplit(path).path
-            if clean == "/uexplorer-bib" or clean.startswith("/uexplorer-bib/"):
-                rel = clean[len("/uexplorer-bib") :].lstrip("/")
-                return str(bib_dir / rel)
-            return str(site_dir / clean.lstrip("/"))
-    url = f"http://{args.host}:{args.port}/Link/uexplorer.html"
+    url = f"http://{args.host}:{args.port}/"
     print(f"Serving local preview at {url}")
-    print(f"  Site root : {site_dir}")
-    print(f"  /uexplorer-bib/ -> {bib_dir}")
+    print(f"  Root : {bib_dir}")
     if args.open:
         webbrowser.open(url)
-    with http.server.ThreadingHTTPServer((args.host, args.port), DualRepoHandler) as httpd:
+    with http.server.ThreadingHTTPServer((args.host, args.port), StandaloneHandler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
             return 0
-
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1069,10 +1060,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_ups.add_argument("--keywords", help="Semicolon-separated keywords")
     p_ups.set_defaults(func=cmd_upsert)
 
-    p_prev = sub.add_parser("preview", help="Start local HTTP server mounting both mengxiangxi.github.io and uexplorer-bib")
-    p_prev.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
+    p_prev = sub.add_parser("preview", help="Start standalone local HTTP preview server")
+    p_prev.add_argument("--port", type=int, default=8765, help="Port (default: 8765)")
     p_prev.add_argument("--host", default="127.0.0.1", help="Host (default: 127.0.0.1)")
-    p_prev.add_argument("--site", default=str(ROOT_DIR.parent / "mengxiangxi.github.io"), help="Path to mengxiangxi.github.io repo")
     p_prev.add_argument("--open", action="store_true", help="Open browser automatically")
     p_prev.set_defaults(func=cmd_preview)
 
