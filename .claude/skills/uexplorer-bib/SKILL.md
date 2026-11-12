@@ -41,22 +41,32 @@ uv run --no-project python "$TOOL" lint --fix
 
 # 5. Synchronize taxonomy.json and lists.md with uExplorer.bib
 uv run --no-project python "$TOOL" sync-taxonomy
+
+# 6. Assign a homonymous author occurrence (<citekey>#<1-based-pos>) to a disambiguated identity
+uv run --no-project python "$TOOL" assign-homonym "Zheng2025AbbreviatedDynamic#4" "Liu, Hui (UIH)"
 ```
 
 ## Retrieval Hierarchy
 
+0. **Level 0 — the user's already-open Chrome tab (MUST, when the user asks for it or states the page is open)**: When the user supplies a link together with wording such as “已在 chrome 中打开” / “the page is open”, start by inspecting the user's own Chrome: `tab list` → `tab select <id>` → `get url` / `get text --max all` / `eval`. Work in that tab in place:
+   - NEVER open a second tab for the same URL, and NEVER re-navigate a tab the user already opened (institutional subscription state, session, scroll position, and figure viewers are lost on reload).
+   - This in-place read is also the default for paywalled publishers (Wiley/Ovid/ACS): `curl` there returns a Cloudflare/interstitial stub, while the user's logged-in tab carries the full text.
+   - Only if no matching tab exists, or the page is stale/unloaded, fall back to `tab new <url>` or `curl`.
+   - Tab text is only as complete as the rendered page: sections behind tabs/accordions or in separate reference panes may be missing — say so instead of inventing content.
+
 1. **Level 1 — `bib_tool.py fetch` (Primary)**: Queries Crossref + PubMed `efetch` XML in parallel to retrieve full author forenames, affiliations, DOI, PMID, volume/issue/pages, publication status, and initial institution/keyword matches.
 2. **Level 2 — Literature MCPs (`pubmed-search` / `elsevier_mcp` / `wos-search`)**: Use if Level 1 lacks full author given names or affiliation strings (e.g., certain non-PubMed engineering papers).
-3. **Level 3 — `@browsermcp` (Fallback only)**: Use **only** when publisher full-text (*Materials and Methods*) is needed to identify which hospital performed the uEXPLORER PET scan, or when the user provides a non-standard webpage link without a DOI/PMID.
+3. **Level 3 — `@browsermcp` navigation (`tab new` / `goto`, Fallback only)**: Use **only** when publisher full-text (*Materials and Methods*) is needed to identify which hospital performed the uEXPLORER PET scan, or when the user provides a non-standard webpage link without a DOI/PMID — and then only after Level 0 found no matching open tab.
 
 ## Workflows
 
 ### Workflow A: Add New Article(s)
-1. Run `bib_tool.py fetch <target>...` to get structured JSON and a draft BibTeX entry.
+1. Run `bib_tool.py fetch <target>...` to get structured JSON and a draft BibTeX entry. If the user said the page is already open, first read that Chrome tab in place per Level 0 — do not open a new tab.
 2. Verify and refine semantic fields:
    - **Citekey**: `<first_author_lastname><year><1-2_keywords>` (concise, e.g., `holman2026kinetics`).
+   - **Language**: non-English publications keep **title, authors and journal in the original language** (`title={全身PET/CT动态显像评估<sup>18</sup>F-MK6240…}`, `author={吴世娜 and 张萌萌 and …}`, `journal={中华核医学与分子影像杂志}`) — never substitute the publisher's English translation. Chinese names are written in full, surname-first, without a comma; radionuclide tags still apply. Every Chinese author name MUST also be mapped to its English `Last, First` form in `taxonomy.json` (`author_aliases`, enforced by `lint` rule `unaliased_cjk_author`) so dropdowns and bibliometrics remain unified in English.
    - **Title**: Sentence case; preserve acronyms (`PET/CT`, `LAFOV`, `FAPI`, `PSMA`, `CT`, etc.) and wrap radionuclides/subscripts in HTML tags (`<sup>18</sup>F`, `<sup>68</sup>Ga`, `[<sup>68</sup>Ga]Ga-FAPI-04`).
-   - **Authors**: Full given names required (`Last, First M and Last2, First2`); middle initials have no periods; never use `et al.` or `and others`.
+   - **Authors**: Full given names required (`Last, First M and Last2, First2`); middle initials have no periods; never use `et al.` or `and others`. Cross-language aliases (e.g. `石洪成` → `Shi, Hongcheng`, `张晓军` → `Zhang, Xiaojun`) are resolved first via `author_aliases`, and then checked against `homonym_authors` (`citekey#pos`, e.g. `Zhang, Xiaojun (PLAGH)` vs `Zhang, Xiaojun (Nanfang)`). If `upsert` or `lint` reports `unaliased_cjk_author` or `unresolved_homonyms`, add the alias to `taxonomy.json` and/or check the author's affiliation in PubMed XML and bind `citekey#pos` via `bib_tool.py assign-homonym`.
    - **Journal**: Full journal name in Title Case, **except** `"Journal of Nuclear Medicine"` which MUST be abbreviated as `"J. Nucl. Med."` (prevents `bibtex-js` substring search collision). Use `\&` for ampersands (`Physics in Medicine \& Biology`).
    - **Status / Year**:
      - If online ahead of print / early access (or `pubmed_status == "aheadofprint"` / IEEE `volume == "PP"` / missing volume & pages): set `--year "Just Accepted"` and omit `volume`, `number`, `pages`.
@@ -94,7 +104,7 @@ uv run --no-project python "$TOOL" sync-taxonomy
 Goal: the reader learns what was actually measured, on whom, with which numbers — not that the tracer "showed favorable properties".
 
 **Evidence sourcing**
-- `fetch` abstract is the minimum; when the paper is a PK/kinetics/technical study, also fetch the publisher HTML (e.g. `curl -sL -A "Mozilla/5.0" <url>` then strip tags) or PubMed `efetch` abstract text.
+- `fetch` abstract is the minimum; when the paper is a PK/kinetics/technical study, also read the publisher full text — prefer the user's already-open Chrome tab (Level 0); otherwise PubMed `efetch` abstract text, then `tab new` in the browser, and only as a last resort `curl -sL -A "Mozilla/5.0" <url>` plus tag stripping (paywalled publishers block it).
 - Every number must come from the abstract/full text; mark `[仅基于摘要]` when the full text was unavailable. Never infer missing values, `P` values, or model names.
 
 **Required dimensions** (skip a dimension only if the paper genuinely lacks it; each with values ± SD and units):

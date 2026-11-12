@@ -38,8 +38,14 @@
 
       <details class="metrics-drawer" id="metrics-drawer">
         <summary class="metrics-summary">
-          <span class="metrics-summary-title">Bibliometrics Overview</span>
-          <span class="metrics-summary-sub" id="metrics-summary-sub">Click to expand · Linked to active filters</span>
+          <div class="metrics-summary-left">
+            <span class="metrics-summary-title">Bibliometrics Overview</span>
+            <span class="metrics-summary-sub" id="metrics-summary-sub">Click to expand · Linked to active filters</span>
+          </div>
+          <div class="metrics-summary-controls" id="metrics-summary-controls">
+            <div class="active-chips" id="metrics-active-chips"></div>
+            <button type="button" class="btn btn-sm" id="metrics-reset-btn">Reset</button>
+          </div>
         </summary>
         <div class="metrics-grid" id="metrics-grid"></div>
       </details>

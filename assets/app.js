@@ -46,37 +46,55 @@
     return html.replace(/<[^>]*>/g, "");
   }
 
-  function parseAuthorToken(rawToken) {
+  function htmlToTex(str) {
+    if (!str) return "";
+    return str
+      .replace(/<sub>([^<]*)<\/sub>\s*<sup>([^<]*)<\/sup>/gi, "$_{$1}^{$2}$")
+      .replace(/<sup>([^<]*)<\/sup>\s*<sub>([^<]*)<\/sub>/gi, "$^{$1}_{$2}$")
+      .replace(/<sup>([^<]*)<\/sup>/gi, "$^{$1}$")
+      .replace(/<sub>([^<]*)<\/sub>/gi, "$_{$1}$")
+      .replace(/<(?:i|em)>([^<]*)<\/(?:i|em)>/gi, "\\textit{$1}")
+      .replace(/<(?:b|strong)>([^<]*)<\/(?:b|strong)>/gi, "\\textbf{$1}");
+  }
+
+  function parseAuthorToken(rawToken, citekey, pos, authorAliases, homonymLookup) {
     const token = decodeBibtex(rawToken.replace(/[{}]/g, "").trim(), false);
     if (!token) return null;
+    let baseCanonical = token;
+    let display = token;
     if (token.includes(",")) {
       const idx = token.indexOf(",");
       const last = token.slice(0, idx).trim();
       const first = token.slice(idx + 1).trim();
-      return {
-        canonical: first ? `${last}, ${first}` : last,
-        display: first ? `${first} ${last}` : last,
-        sortKey: (first ? `${last}, ${first}` : last).toLowerCase()
-      };
+      baseCanonical = first ? `${last}, ${first}` : last;
+      display = first ? `${first} ${last}` : last;
+    } else {
+      const parts = token.split(/\s+/);
+      if (parts.length > 1) {
+        const last = parts[parts.length - 1];
+        const first = parts.slice(0, -1).join(" ");
+        baseCanonical = `${last}, ${first}`;
+        display = token;
+      }
     }
-    const parts = token.split(/\s+/);
-    if (parts.length > 1) {
-      const last = parts[parts.length - 1];
-      const first = parts.slice(0, -1).join(" ");
-      return {
-        canonical: `${last}, ${first}`,
-        display: token,
-        sortKey: `${last}, ${first}`.toLowerCase()
-      };
-    }
+
+    const aliased = (authorAliases && authorAliases[baseCanonical]) || baseCanonical;
+    const occKey = `${citekey}#${pos}`;
+    const homonymHit = homonymLookup && homonymLookup.get(occKey);
+    const canonical = homonymHit ? homonymHit.canonical : aliased;
+    const tooltip = homonymHit && homonymHit.note
+      ? `Filter by ${canonical} — ${homonymHit.note}`
+      : `Filter by ${canonical}`;
+
     return {
-      canonical: token,
-      display: token,
-      sortKey: token.toLowerCase()
+      canonical,
+      display,
+      tooltip,
+      sortKey: canonical.toLowerCase()
     };
   }
 
-  function parseBibtex(text) {
+  function parseBibtex(text, authorAliases, homonymLookup) {
     const entries = [];
     const n = text.length;
     let pos = 0;
@@ -126,9 +144,8 @@
       if (etype === "article" || etype === "inproceedings") {
         const authorObjs = (fields.author || "")
           .split(/\s+and\s+/i)
-          .map(parseAuthorToken)
+          .map((tok, idx) => parseAuthorToken(tok, key, idx + 1, authorAliases, homonymLookup))
           .filter(Boolean);
-
         const institutions = (fields.institution || "")
           .split(";")
           .map((s) => decodeBibtex(s, false))
@@ -166,10 +183,21 @@
           .join(" ")
           .toLowerCase();
 
+        const standardFields = ["title", "author", "journal", "booktitle", "volume", "number", "pages", "year", "doi", "url"];
+        const bibLines = [`@${etype}{${key},`];
+        const presentStd = standardFields.filter((f) => fields[f]);
+        presentStd.forEach((f, idx) => {
+          const comma = idx < presentStd.length - 1 ? "," : "";
+          const val = f === "title" ? htmlToTex(fields[f]) : fields[f];
+          bibLines.push(`${f}={${val}}${comma}`);
+        });
+        bibLines.push("}");
+        const cleanBib = bibLines.join("\n");
+
         entries.push({
           type: etype,
           key,
-          raw: rawEntry,
+          raw: cleanBib,
           titleHtml,
           titlePlain,
           authorObjs,
@@ -322,7 +350,6 @@
     const journalCounts = {};
     const instCounts = {};
     const kwCounts = {};
-    let multiCenterCount = 0;
 
     for (const e of entries) {
       yearCounts[e.year] = (yearCounts[e.year] || 0) + 1;
@@ -335,9 +362,6 @@
       }
       for (const a of e.authors) {
         authorCounts[a] = (authorCounts[a] || 0) + 1;
-      }
-      if (e.institutions.length > 1) {
-        multiCenterCount++;
       }
       for (const inst of e.institutions) {
         instCounts[inst] = (instCounts[inst] || 0) + 1;
@@ -381,8 +405,6 @@
       .slice(0, 10)
       .map((y) => [y, yearCounts[y]]);
 
-    const multiPct = entries.length ? ((multiCenterCount / entries.length) * 100).toFixed(1) : "0.0";
-
     gridEl.innerHTML = [
       renderMetricCard(
         "Annual Trend",
@@ -394,7 +416,7 @@
       ),
       renderMetricCard(
         "Top Institutions",
-        `${multiPct}% multi-center`,
+        `${Object.keys(instCounts).length} total`,
         topN(instCounts, 10),
         "institution",
         "fill-inst",
@@ -441,7 +463,7 @@
       (a) =>
         `<span class="bib-author-item" data-filter-type="author" data-filter-value="${escapeHtml(
           a.canonical
-        )}" title="Filter by ${escapeHtml(a.canonical)}">${escapeHtml(a.display)}</span>`
+        )}" title="${escapeHtml(a.tooltip || "Filter by " + a.canonical)}">${escapeHtml(a.display)}</span>`
     );
     if (spans.length === 1) return spans[0];
     if (spans.length === 2) return `${spans[0]} and ${spans[1]}`;
@@ -556,8 +578,6 @@
           : `Showing ${shownCount} of ${totalCount} publications`;
     }
 
-    const chipsEl = document.getElementById("active-chips");
-    if (!chipsEl) return;
     const chips = [];
     const labels = {
       year: "Year",
@@ -577,7 +597,11 @@
         );
       }
     }
-    chipsEl.innerHTML = chips.join("");
+    const chipsHtml = chips.join("");
+    const chipsEl = document.getElementById("active-chips");
+    if (chipsEl) chipsEl.innerHTML = chipsHtml;
+    const metricsChipsEl = document.getElementById("metrics-active-chips");
+    if (metricsChipsEl) metricsChipsEl.innerHTML = chipsHtml;
   }
 
   function renderList(entries) {
@@ -658,10 +682,27 @@
   async function init() {
     const listEl = document.getElementById("bib_list");
     try {
-      const resp = await fetch("./uExplorer.bib", { cache: "no-cache" });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const bibText = await resp.text();
-      allEntries = parseBibtex(bibText);
+      const [bibResp, taxResp] = await Promise.all([
+        fetch("./uExplorer.bib", { cache: "no-cache" }),
+        fetch("./taxonomy.json", { cache: "no-cache" }).catch(() => null)
+      ]);
+      if (!bibResp.ok) throw new Error(`HTTP ${bibResp.status}`);
+      const bibText = await bibResp.text();
+      let authorAliases = {};
+      const homonymLookup = new Map();
+      if (taxResp && taxResp.ok) {
+        const tax = await taxResp.json();
+        authorAliases = tax.author_aliases || {};
+        const homonyms = tax.homonym_authors || {};
+        for (const groups of Object.values(homonyms)) {
+          for (const [personId, info] of Object.entries(groups)) {
+            for (const occ of info.occurrences || []) {
+              homonymLookup.set(occ, { canonical: personId, note: info.note || "" });
+            }
+          }
+        }
+      }
+      allEntries = parseBibtex(bibText, authorAliases, homonymLookup);
       buildControls(allEntries);
       syncStateFromUrl();
       syncControlsFromState();
@@ -699,6 +740,19 @@
       const chip = ev.target.closest("[data-clear-key]");
       if (chip) {
         setFilter(chip.getAttribute("data-clear-key"), "");
+      }
+    });
+
+    document.getElementById("metrics-summary-controls")?.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const chip = ev.target.closest("[data-clear-key]");
+      if (chip) {
+        setFilter(chip.getAttribute("data-clear-key"), "");
+        return;
+      }
+      if (ev.target.closest("#metrics-reset-btn")) {
+        window.resetBibFilters();
       }
     });
 

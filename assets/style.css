@@ -190,13 +190,40 @@ code {
 
 .metrics-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 8px 12px;
   padding: 8px 14px;
   cursor: pointer;
   user-select: none;
   font-size: 0.88rem;
   list-style: none;
+}
+
+.metrics-summary-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+
+.metrics-summary-controls {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.metrics-drawer[open] .metrics-summary-controls {
+  display: flex;
+}
+
+.btn-sm {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 0.78rem;
 }
 
 .metrics-summary::-webkit-details-marker {

@@ -85,6 +85,8 @@ def load_taxonomy() -> dict[str, Any]:
         "keyword_aliases": {},
         "forbidden_keywords": [],
         "journal_aliases": {},
+        "author_aliases": {},
+        "homonym_authors": {},
     }
 
 
@@ -666,13 +668,30 @@ def cmd_lint(args: argparse.Namespace) -> int:
     kw_aliases = taxonomy.get("keyword_aliases", {})
     forbidden_kw = set(taxonomy.get("forbidden_keywords", []))
     journal_aliases = taxonomy.get("journal_aliases", {})
+    author_aliases = taxonomy.get("author_aliases", {})
+    homonym_authors = taxonomy.get("homonym_authors", {})
+
+    issues: list[dict[str, str]] = []
+    occ_to_homonym: dict[str, tuple[str, str]] = {}
+    for base_au, groups in homonym_authors.items():
+        for person_id, info in groups.items():
+            for occ in info.get("occurrences", []):
+                if occ in occ_to_homonym:
+                    issues.append(
+                        {
+                            "key": occ,
+                            "type": "duplicate_homonym_occurrence",
+                            "detail": f"Occurrence {occ} assigned to both {occ_to_homonym[occ][1]} and {person_id}",
+                        }
+                    )
+                occ_to_homonym[occ] = (base_au, person_id)
 
     entries = parse_bibtex(bib_path.read_text(encoding="utf-8"))
-    issues: list[dict[str, str]] = []
 
     seen_keys: set[str] = set()
     seen_dois: dict[str, str] = {}
     seen_pmids: dict[str, str] = {}
+    seen_homonym_occs: set[str] = set()
     deduped_entries: list[dict[str, Any]] = []
 
     for e in entries:
@@ -822,11 +841,97 @@ def cmd_lint(args: argparse.Namespace) -> int:
         if args.fix and norm_kw:
             f["keywords"] = "; ".join(norm_kw)
 
+
+        # 8. Author format, alias, and homonym disambiguation check
+        raw_authors = [x.strip() for x in f.get("author", "").split(" and ") if x.strip()]
+        norm_authors: list[str] = []
+        seen_entities_in_entry: dict[str, int] = {}
+        for pos, au in enumerate(raw_authors, 1):
+            has_cjk = bool(re.search(r"[\u4e00-\u9fff]", au))
+            fixed_au = au
+            if "," not in au and not has_cjk:
+                parts = au.split()
+                if len(parts) > 1:
+                    flipped = f"{parts[-1]}, {' '.join(parts[:-1])}"
+                    issues.append(
+                        {
+                            "key": key,
+                            "type": "author_format",
+                            "detail": f"Author #{pos} '{au}' missing comma -> '{flipped}'",
+                        }
+                    )
+                    if args.fix:
+                        fixed_au = flipped
+            if fixed_au in author_aliases and (not has_cjk or fixed_au == "吴湖"):
+                target_au = "吴湖炳" if fixed_au == "吴湖" else author_aliases[fixed_au]
+                issues.append(
+                    {
+                        "key": key,
+                        "type": "author_alias",
+                        "detail": f"Author #{pos} '{fixed_au}' -> '{target_au}'",
+                    }
+                )
+                if args.fix:
+                    fixed_au = target_au
+            norm_authors.append(fixed_au)
+            if has_cjk and fixed_au not in author_aliases:
+                issues.append(
+                    {
+                        "key": key,
+                        "type": "unaliased_cjk_author",
+                        "detail": f"Chinese author '{fixed_au}' at {key}#{pos} must have an English 'Last, First' alias in taxonomy.json author_aliases",
+                    }
+                )
+
+            resolved_base = author_aliases.get(fixed_au, fixed_au)
+            occ_id = f"{key}#{pos}"
+            if resolved_base in homonym_authors:
+                mapped_hom = occ_to_homonym.get(occ_id)
+                if not mapped_hom or mapped_hom[0] != resolved_base:
+                    candidates = ", ".join(homonym_authors[resolved_base].keys())
+                    issues.append(
+                        {
+                            "key": key,
+                            "type": "unresolved_homonym",
+                            "detail": f"Homonymous author '{fixed_au}' at {occ_id} not assigned in taxonomy.json (candidates: {candidates})",
+                        }
+                    )
+                    resolved_entity = resolved_base
+                else:
+                    seen_homonym_occs.add(occ_id)
+                    resolved_entity = mapped_hom[1]
+            else:
+                resolved_entity = resolved_base
+
+            if resolved_entity in seen_entities_in_entry:
+                prev_pos = seen_entities_in_entry[resolved_entity]
+                issues.append(
+                    {
+                        "key": key,
+                        "type": "duplicate_author_in_entry",
+                        "detail": f"Author '{resolved_entity}' appears multiple times in {key} (#{prev_pos} and #{pos})",
+                    }
+                )
+            else:
+                seen_entities_in_entry[resolved_entity] = pos
+
+        if args.fix and norm_authors:
+            f["author"] = " and ".join(norm_authors)
         # 8. Trailing comma in raw entry
         if re.search(r",\s*\}\s*$", e["raw"]):
             issues.append({"key": key, "type": "trailing_comma", "detail": "Trailing comma before closing brace"})
 
         deduped_entries.append(e)
+
+    for occ_id, (base_au, person_id) in sorted(occ_to_homonym.items()):
+        if occ_id not in seen_homonym_occs:
+            issues.append(
+                {
+                    "key": occ_id,
+                    "type": "stale_homonym_ref",
+                    "detail": f"Homonym reference {occ_id} ({person_id}) does not match author '{base_au}' in uExplorer.bib",
+                }
+            )
 
     if args.fix:
         out_text = "\n\n".join(format_entry(e) for e in deduped_entries) + "\n"
@@ -880,6 +985,15 @@ def cmd_sync_taxonomy(args: argparse.Namespace) -> int:
 
     # Regenerate human-readable lists.md
     repl_lines = [f'- "{k}" → "{v}"' for k, v in sorted(inst_aliases.items())]
+    author_alias_lines = [f'- "{k}" → "{v}"' for k, v in sorted(taxonomy.get("author_aliases", {}).items())]
+    homonym_lines: list[str] = []
+    for base_au, groups in sorted(taxonomy.get("homonym_authors", {}).items()):
+        homonym_lines.append(f"### {base_au}")
+        for person_id, info in sorted(groups.items()):
+            occs = ", ".join(f"`{o}`" for o in info.get("occurrences", []))
+            note = info.get("note", "")
+            homonym_lines.append(f"- **{person_id}** ({note}): {occs}")
+
     lists_md = (
         "# Lists\n\n"
         "*(Auto-synchronized from `taxonomy.json` and `uExplorer.bib` via `scripts/bib_tool.py sync-taxonomy`)*\n\n"
@@ -889,6 +1003,10 @@ def cmd_sync_taxonomy(args: argparse.Namespace) -> int:
         + "\n".join(repl_lines)
         + "\n\n## Keywords\n\n"
         + "; ".join(taxonomy["keywords"])
+        + "\n\n## Author Aliases\n\n"
+        + "\n".join(author_alias_lines)
+        + "\n\n## Homonym Disambiguation (`citekey#pos`)\n\n"
+        + "\n".join(homonym_lines)
         + "\n"
     )
     LISTS_MD_PATH.write_text(lists_md, encoding="utf-8")
@@ -982,11 +1100,92 @@ def cmd_upsert(args: argparse.Namespace) -> int:
     out_text = "\n\n".join(format_entry(e) for e in entries) + "\n"
     bib_path.write_text(out_text, encoding="utf-8")
 
+    # Check if any author in the upserted entry is an unresolved homonym
+    author_aliases = taxonomy.get("author_aliases", {})
+    homonym_authors = taxonomy.get("homonym_authors", {})
+    unresolved_homonyms: list[dict[str, Any]] = []
+    for pos, raw_au in enumerate([x.strip() for x in f.get("author", "").split(" and ") if x.strip()], 1):
+        base_au = author_aliases.get(raw_au, raw_au)
+        if re.search(r"[\u4e00-\u9fff]", raw_au) and raw_au not in author_aliases:
+            unresolved_homonyms.append(
+                {
+                    "occurrence": f"{target_entry['key']}#{pos}",
+                    "author": raw_au,
+                    "error": "unaliased_cjk_author: add English 'Last, First' mapping to taxonomy.json author_aliases",
+                }
+            )
+        if base_au in homonym_authors:
+            occ_id = f"{target_entry['key']}#{pos}"
+            assigned = any(
+                occ_id in info.get("occurrences", [])
+                for info in homonym_authors[base_au].values()
+            )
+            if not assigned:
+                unresolved_homonyms.append(
+                    {
+                        "occurrence": occ_id,
+                        "author": raw_au,
+                        "candidates": {
+                            pid: info.get("note", "") for pid, info in homonym_authors[base_au].items()
+                        },
+                    }
+                )
+
     # Keep taxonomy synchronized
     cmd_sync_taxonomy(args)
-    print(json.dumps({"action": "inserted" if is_new else "updated", "entry": format_entry(target_entry)}, indent=2, ensure_ascii=False))
+    result_payload: dict[str, Any] = {
+        "action": "inserted" if is_new else "updated",
+        "entry": format_entry(target_entry),
+    }
+    if unresolved_homonyms:
+        result_payload["unresolved_homonyms"] = unresolved_homonyms
+    print(json.dumps(result_payload, indent=2, ensure_ascii=False))
     return 0
 
+
+def cmd_assign_homonym(args: argparse.Namespace) -> int:
+    bib_path = Path(args.bib)
+    taxonomy = load_taxonomy()
+    author_aliases = taxonomy.get("author_aliases", {})
+    homonym_authors = taxonomy.setdefault("homonym_authors", {})
+
+    occ_id = args.occurrence.strip()
+    if "#" not in occ_id:
+        raise SystemExit("Error: occurrence must be formatted as <citekey>#<1-based-pos> (e.g. Zheng2025AbbreviatedDynamic#4)")
+    citekey, pos_str = occ_id.split("#", 1)
+    if not pos_str.isdigit() or int(pos_str) < 1:
+        raise SystemExit(f"Error: invalid 1-based author position in {occ_id}")
+    pos = int(pos_str)
+
+    entries = parse_bibtex(bib_path.read_text(encoding="utf-8"))
+    entry = next((e for e in entries if e["key"] == citekey), None)
+    if entry is None:
+        raise SystemExit(f"Error: citekey '{citekey}' not found in {bib_path.name}")
+    authors = [x.strip() for x in entry["fields"].get("author", "").split(" and ") if x.strip()]
+    if pos > len(authors):
+        raise SystemExit(f"Error: {citekey} has only {len(authors)} authors (requested #{pos})")
+
+    raw_au = authors[pos - 1]
+    base_au = author_aliases.get(raw_au, raw_au)
+    groups = homonym_authors.setdefault(base_au, {})
+    person_id = args.person.strip()
+
+    # Remove occ_id from any existing group under base_au
+    for grp in groups.values():
+        occs = grp.get("occurrences", [])
+        if occ_id in occs:
+            occs.remove(occ_id)
+
+    target_grp = groups.setdefault(person_id, {"note": args.note or "", "occurrences": []})
+    if args.note:
+        target_grp["note"] = args.note
+    if occ_id not in target_grp["occurrences"]:
+        target_grp["occurrences"].append(occ_id)
+
+    TAXONOMY_PATH.write_text(json.dumps(taxonomy, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    cmd_sync_taxonomy(args)
+    print(json.dumps({"assigned": occ_id, "base_author": base_au, "person": person_id}, indent=2, ensure_ascii=False))
+    return 0
 
 def cmd_preview(args: argparse.Namespace) -> int:
     import http.server
@@ -1059,6 +1258,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_ups.add_argument("--institution", help="Semicolon-separated institutions")
     p_ups.add_argument("--keywords", help="Semicolon-separated keywords")
     p_ups.set_defaults(func=cmd_upsert)
+
+    p_hom = sub.add_parser("assign-homonym", help="Bind a <citekey>#<pos> occurrence to a disambiguated homonym person")
+    p_hom.add_argument("occurrence", help="Occurrence ID formatted as <citekey>#<1-based-pos>")
+    p_hom.add_argument("person", help="Disambiguated person label (e.g. 'Liu, Hui (UIH)')")
+    p_hom.add_argument("--note", default="", help="Optional affiliation/context note for this person")
+    p_hom.set_defaults(func=cmd_assign_homonym)
 
     p_prev = sub.add_parser("preview", help="Start standalone local HTTP preview server")
     p_prev.add_argument("--port", type=int, default=8765, help="Port (default: 8765)")

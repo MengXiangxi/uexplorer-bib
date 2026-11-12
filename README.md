@@ -65,6 +65,9 @@ uv run --no-project python scripts/bib_tool.py lint --fix
 
 # 5. Synchronize taxonomy.json and lists.md with uExplorer.bib
 uv run --no-project python scripts/bib_tool.py sync-taxonomy
+
+# 6. Bind a homonymous author occurrence (<citekey>#<1-based-pos>) to a specific person
+uv run --no-project python scripts/bib_tool.py assign-homonym "Zheng2025AbbreviatedDynamic#4" "Liu, Hui (UIH)"
 ```
 
 ## Entry Format
