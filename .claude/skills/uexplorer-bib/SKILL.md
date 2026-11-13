@@ -15,6 +15,7 @@ Always run the Python CLI via `uv` first instead of scraping web pages manually:
 TOOL="scripts/bib_tool.py"
 
 # 1. Fetch metadata (Crossref + PubMed XML) from DOI, PMID, or URL (supports multiple targets)
+#    `year` is the volume/issue year; `year_source` shows which field produced it
 uv run --no-project python "$TOOL" fetch "<DOI_OR_PMID_OR_URL>"
 
 # 2. Insert a new entry (at top of uExplorer.bib) or update an existing entry (matched by key/DOI/PMID)
@@ -71,8 +72,16 @@ uv run --no-project python "$TOOL" assign-homonym "Zheng2025AbbreviatedDynamic#4
    - **Status / Year**:
      - If online ahead of print / early access (or `pubmed_status == "aheadofprint"` / IEEE `volume == "PP"` / missing volume & pages): set `--year "Just Accepted"` and omit `volume`, `number`, `pages`.
      - If formally assigned to an issue: set `--year` to the **issue/volume publication year** (not online-first year) and include `volume`, `number`, `pages` (`--` for page ranges).
+     - **Volume year is authoritative — never the online-first year.** `bib_tool.py fetch` already resolves this and reports it as `year_source`; the precedence is `crossref_journal_issue` (`journal-issue.published-print` → `journal-issue.published-online`) → `crossref_print` → `pubmed_journal_issue` → `pubmed_pubdate` → `crossref_online`. Only override by hand with publisher evidence, and record why.
+       - Do not derive the year from the DOI suffix: Springer/Nature DOIs carry the *submission-tree* year (`10.1186/s13550-025-01332-5` → vol 16, 2026), and the same mismatch runs the other way on other publishers.
+       - Crossref `issued` / `published-online` and PubMed `JournalIssue/PubDate` are online dates for many OA journals (PubMed copies the epub date into `PubDate`); both are last-resort fallbacks only.
+       - Confirm against the publisher page when the two disagree: Springer exposes `citation_volume`, `citation_issue`, `citation_publication_date` (the issue date) next to `citation_online_date`.
+       - The citekey year MUST equal the entry year (`liu2026girentuximab`, not `liu2025…`); `fetch`'s `citekey_suggestion` is built from the resolved year.
+       - Worked example: online 2025-12-24, vol 16(1), article 1 → `year={2026}`. Repo precedent: `chen2026PDL1PET` (DOI `…jitc-2025-013837`) is `year={2026}`.
    - **Institution**: 1–3 succinct institutions separated by `; ` (semicolon + space):
-     - Include main authors' institutions (first/corresponding) AND the hospital operating the uEXPLORER scanner.
+     - **Hard constraint — author affiliates outrank scanner site**: every institution listed MUST appear in the paper's own author affiliation list. If the unit that operates the uEXPLORER scanner (or that supplied the imaging data, e.g. a shared challenge dataset) is not among the authors' affiliations, it MUST NOT be assigned. Record the provenance in the content analysis instead of the `institution` field. Concretely: Ruijin data reused by a Tübingen/Lübeck method paper stays out of `institution`.
+     - **Membership test needs the publisher byline, not just Crossref**: Crossref often truncates an affiliation to its parent (`Shanghai Jiao Tong University School of Medicine` for `Department of Nuclear Medicine …, Ruijin Hospital, Shanghai Jiao Tong University School of Medicine`). Before concluding a unit is absent, read the publisher's own author list (IEEE *Authors* panel, ScienceDirect/ACS author popovers, `@browsermcp`, or the PDF) — a hospital hidden behind a parent university is still an author affiliation.
+     - Include main authors' institutions (first/corresponding) AND, subject to the hard constraint above, the hospital operating the uEXPLORER scanner.
      - Omit parent university when an affiliated hospital is already listed (e.g., use `Zhongshan Hospital`, not `Zhongshan Hospital; Fudan University`).
      - Affiliations of international collaborating co-authors do NOT fill these slots: when the author list spans many countries, list only first/corresponding + scanner site (e.g., `Zhongshan Hospital` alone, not `Zhongshan Hospital; UC Davis; University of Bern`).
      - Consult `taxonomy.json` (`institution_aliases` and `institutions`). Notably: `"The First Affiliated Hospital of Shandong First Medical University"` $\rightarrow$ `"Qianfoshan Hospital"`.

@@ -350,6 +350,14 @@ def parse_pubmed_article_xml(art: ET.Element) -> dict[str, Any]:
     }
 
 
+def _date_parts_year(date_obj: dict[str, Any] | None) -> str:
+    """Year from a Crossref ``{"date-parts": [[YYYY, M, D]]}`` object, '' if absent."""
+    parts = (date_obj or {}).get("date-parts") or [[None]]
+    first = parts[0] if parts else [None]
+    year = first[0] if first else None
+    return str(year) if year else ""
+
+
 def fetch_crossref_by_doi(doi: str) -> dict[str, Any]:
     url = f"https://api.crossref.org/works/{urllib.parse.quote(doi)}"
     data = http_get_json(url)
@@ -381,6 +389,13 @@ def fetch_crossref_by_doi(doi: str) -> dict[str, Any]:
     pub_online = msg.get("published-online", {}).get("date-parts", [[None]])[0][0]
     year = str(pub_print or pub_online or "")
 
+    # The volume/issue year, which is what a citation must carry. Crossref puts it in
+    # journal-issue, separately from the article's own print/online dates (an article
+    # published online in Dec 2025 can belong to volume 16 (2026)).
+    jissue = msg.get("journal-issue") or {}
+    issue_print = _date_parts_year(jissue.get("published-print"))
+    issue_online = _date_parts_year(jissue.get("published-online"))
+
     return {
         "doi": msg.get("DOI") or doi,
         "title": raw_title,
@@ -392,6 +407,7 @@ def fetch_crossref_by_doi(doi: str) -> dict[str, Any]:
         "year": year,
         "year_print": str(pub_print) if pub_print else "",
         "year_online": str(pub_online) if pub_online else "",
+        "year_issue": issue_print or issue_online,
         "affiliations": affiliations,
     }
 
@@ -427,6 +443,27 @@ def suggest_keywords(text_blob: str, taxonomy: dict[str, Any]) -> list[str]:
         elif kw.lower() in blob_lower:
             matched.append(kw)
     return matched[:6]
+
+
+def resolve_publication_year(cr_data: dict[str, Any], pm_data: dict[str, Any]) -> tuple[str, str]:
+    """Citation year for a formally published article: the volume/issue year.
+
+    Precedence: Crossref journal-issue date -> Crossref print date -> PubMed issue
+    date -> freestanding print/online dates. The online-first date is the last resort
+    because it is not the year a citation should carry.
+    """
+    candidates = (
+        (cr_data.get("year_issue"), "crossref_journal_issue"),
+        (cr_data.get("year_print"), "crossref_print"),
+        (pm_data.get("year_issue"), "pubmed_journal_issue"),
+        (pm_data.get("year"), "pubmed_pubdate"),
+        (cr_data.get("year"), "crossref_online"),
+    )
+    for value, source in candidates:
+        value = str(value or "").strip()
+        if value:
+            return value, source
+    return "", ""
 
 
 def fetch_single_target(target: str, taxonomy: dict[str, Any]) -> dict[str, Any]:
@@ -481,7 +518,10 @@ def fetch_single_target(target: str, taxonomy: dict[str, Any]) -> dict[str, Any]
 
     pm_status = pm_data.get("status", "")
     is_just_accepted = (pm_status == "aheadofprint" and not (volume and pages)) or not (volume and pages)
-    year = "Just Accepted" if is_just_accepted else (cr_data.get("year_print") or pm_data.get("year") or cr_data.get("year") or "")
+    if is_just_accepted:
+        year, year_source = "Just Accepted", "just_accepted"
+    else:
+        year, year_source = resolve_publication_year(cr_data, pm_data)
 
     affiliations = pm_data.get("affiliations") or cr_data.get("affiliations") or []
     matched_inst = match_institutions_from_affiliations(affiliations, taxonomy)
@@ -491,7 +531,8 @@ def fetch_single_target(target: str, taxonomy: dict[str, Any]) -> dict[str, Any]
 
     first_last = authors[0].split(",")[0].lower() if authors else "author"
     first_last = re.sub(r"[^a-z]", "", first_last)
-    key_year = (cr_data.get("year") or pm_data.get("year") or "2026")[:4]
+    key_year = year[:4] if year != "Just Accepted" else ""
+    key_year = key_year or (cr_data.get("year") or pm_data.get("year") or "2026")[:4]
     words = [w.lower() for w in re.findall(r"[A-Za-z]{4,}", re.sub(r"<[^>]+>", "", title)) if w.lower() not in {"with", "from", "using", "total", "body", "study", "imaging", "patients", "based"}]
     citekey = f"{first_last}{key_year}{''.join(w.capitalize() for w in words[:2])}"
 
@@ -530,6 +571,7 @@ def fetch_single_target(target: str, taxonomy: dict[str, Any]) -> dict[str, Any]
         "number": number,
         "pages": pages,
         "year": year,
+        "year_source": year_source,
         "raw_affiliations": affiliations,
         "matched_institutions": matched_inst,
         "suggested_keywords": suggested_kw,
@@ -622,7 +664,7 @@ def cmd_check_updates(args: argparse.Namespace) -> int:
             vol = cr.get("volume") or pm.get("volume") or ""
             num = cr.get("number") or pm.get("number") or ""
             pages = cr.get("pages") or pm.get("pages") or ""
-            yr = cr.get("year_print") or pm.get("year") or cr.get("year") or ""
+            yr = resolve_publication_year(cr, pm)[0]
             pm_status = pm.get("status", "")
 
             if vol and pages and vol != "PP" and pm_status != "aheadofprint" and yr:
