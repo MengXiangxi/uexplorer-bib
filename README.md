@@ -32,7 +32,7 @@ uexplorer-bib/
 No external repository or third-party Python package is required:
 
 ```bash
-uv run --no-project python preview.py             # Serves 0.0.0.0:8765 (local + Tailscale) and opens a tab
+uv run --no-project python preview.py             # Serves 127.0.0.1 + Tailscale IP and opens a tab
 uv run --no-project python preview.py --no-open   # Serve only
 ```
 

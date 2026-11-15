@@ -6,10 +6,10 @@ caching so edits to ``uExplorer.bib``, ``index.html``, or ``assets/`` appear
 immediately on reload.
 
 Usage:
-    uv run --no-project python preview.py              # 0.0.0.0:8765 (local + Tailscale), opens a tab
-    uv run --no-project python preview.py --no-open    # serve only
+    uv run --no-project python preview.py                # 127.0.0.1 + Tailscale IP, opens a tab
+    uv run --no-project python preview.py --no-open      # serve only
+    uv run --no-project python preview.py --no-tailscale # loopback 127.0.0.1 only
     uv run --no-project python preview.py --port 9000
-    uv run --no-project python preview.py --host 127.0.0.1
 """
 
 from __future__ import annotations
@@ -18,7 +18,9 @@ import argparse
 import ipaddress
 import socket
 import sys
+import threading
 import webbrowser
+from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -36,9 +38,27 @@ UTF8_TYPES = (
 
 
 def make_handler(root: Path):
+    root_resolved = root.resolve()
+
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=str(root), **kwargs)
+            super().__init__(*args, directory=str(root_resolved), **kwargs)
+
+        def send_head(self):
+            target = Path(self.translate_path(self.path)).resolve()
+            try:
+                rel = target.relative_to(root_resolved)
+            except ValueError:
+                self.send_error(HTTPStatus.FORBIDDEN)
+                return None
+            if any(part.startswith(".") for part in rel.parts):
+                self.send_error(HTTPStatus.FORBIDDEN)
+                return None
+            return super().send_head()
+
+        def list_directory(self, path):
+            self.send_error(HTTPStatus.FORBIDDEN)
+            return None
 
         def guess_type(self, path):
             ctype = super().guess_type(path)
@@ -73,42 +93,59 @@ def tailscale_ipv4() -> str | None:
         pass
     return None
 
-def serve(root: Path, host: str, port: int) -> tuple[ThreadingHTTPServer, int]:
+def serve(root: Path, hosts: list[str], port: int) -> tuple[list[ThreadingHTTPServer], int]:
     handler = make_handler(root)
     for candidate in range(port, port + 20):
-        if port_busy(host, candidate):
+        if any(port_busy(h, candidate) for h in hosts):
             continue
+        servers: list[ThreadingHTTPServer] = []
         try:
-            return ThreadingHTTPServer((host, candidate), handler), candidate
+            for h in hosts:
+                servers.append(ThreadingHTTPServer((h, candidate), handler))
+            return servers, candidate
         except OSError:
+            for s in servers:
+                s.server_close()
             continue
     raise SystemExit(f"no free port in {port}-{port + 19}")
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--host", default="0.0.0.0", help="bind address (default: 0.0.0.0 for local + Tailscale)")
+    ap.add_argument("--host", default="127.0.0.1", help="primary bind address (default: 127.0.0.1)")
+    ap.add_argument("--no-tailscale", action="store_true", help="do not also bind the local Tailscale IPv4")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-open", action="store_true", help="do not open a browser tab")
     args = ap.parse_args(argv)
 
-    httpd, port = serve(REPO, args.host, args.port)
+    hosts = [args.host]
+    ts_ip = None if args.no_tailscale or args.host in ("0.0.0.0", "") else tailscale_ipv4()
+    if ts_ip and ts_ip not in hosts:
+        hosts.append(ts_ip)
+
+    servers, port = serve(REPO, hosts, args.port)
     local_host = "127.0.0.1" if args.host in ("0.0.0.0", "") else args.host
     url = f"http://{local_host}:{port}/"
     print(f"repo:      {REPO}")
     print(f"ready:     {url}")
-    if args.host in ("0.0.0.0", ""):
-        ts_ip = tailscale_ipv4()
-        if ts_ip:
-            print(f"tailscale: http://{ts_ip}:{port}/")
+    if ts_ip:
+        print(f"tailscale: http://{ts_ip}:{port}/")
     if not args.no_open:
         webbrowser.open(url)
+
+    extra_threads = [
+        threading.Thread(target=s.serve_forever, daemon=True) for s in servers[1:]
+    ]
+    for t in extra_threads:
+        t.start()
     try:
-        httpd.serve_forever()
+        servers[0].serve_forever()
     except KeyboardInterrupt:
         print("\nstopped")
     finally:
-        httpd.server_close()
+        for s in servers:
+            s.shutdown()
+            s.server_close()
     return 0
 
 
